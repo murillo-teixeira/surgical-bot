@@ -1,5 +1,6 @@
 import serial
 import re
+import time
 
 class Robot:
     def __init__(self, port):
@@ -22,7 +23,7 @@ class Robot:
         time.sleep(1)
         response = self.ser.read_all()
         pattern = "X:([\s-]\d+)\s*Y:([\s-]\d+)\s*Z:([\s-]\d+)\s*P:([\s-]\d+)\s*R:([\s-]\d+)"
-        match = re.search(pattern, thing.decode('ascii'))
+        match = re.search(pattern, response.decode('ascii'))
         self.position = [
             int(match.group(1)),
             int(match.group(2)),
