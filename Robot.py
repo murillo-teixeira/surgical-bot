@@ -37,7 +37,7 @@ class Robot:
     def print_pose(self):
         print(self.pose)
 
-port = "COM4"
-robot = Robot(port)
-robot.update_current_position()
-robot.print_pose()
+# port = "COM4"
+# robot = Robot(port)
+# robot.update_current_position()
+# robot.print_pose()
