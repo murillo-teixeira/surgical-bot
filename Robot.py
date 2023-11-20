@@ -16,9 +16,9 @@ class Robot:
 
         self.pose = Pose()
 
-        self.get_initial_position()
+        self.get_intial_position()
 
-    def get_initial_position(self):
+    def get_intial_position(self):
         self.ser.write(b"HERE P1 \r")
         time.sleep(1)
         self.ser.write(b"LISTPV P1 \r")
@@ -33,6 +33,103 @@ class Robot:
             int(match.group(4)),
             int(match.group(5))
         ])
+
+    
+    '''
+    Starts from the initial position and updates the position
+    '''
+
+    def move_robot_x(self, increment):
+
+            self.pose.update_pose([
+                self.pose.position.x + increment,
+                self.pose.position.y,
+                self.pose.position.z,
+                self.pose.orientation.roll,
+                self.pose.orientation.pitch,
+            ])
+            position_command = "SETPVC P1 X " + self.pose.position.x
+            self.ser.write(bytes(position_command, encoding='utf-8'))
+            self.ser.read_all()
+            self.ser.write(b"MOVE P1")
+            self.ser.read_all()
+
+    def move_robot_y(self, increment):
+
+        self.pose.update_pose([
+            self.pose.position.x,
+            self.pose.position.y + increment,
+            self.pose.position.z,
+            self.pose.orientation.roll,
+            self.pose.orientation.pitch,
+        ])
+
+        self.ser.write(b"SETPVC P1 Y", self.pose.position.y)
+        self.ser.read_all()
+        self.ser.write(b"MOVE P1")
+        self.ser.read_all()
+
+    def move_robot_z(self, increment):
+
+        self.pose.update_pose([
+            self.pose.position.x,
+            self.pose.position.y,
+            self.pose.position.z + increment,
+            self.pose.orientation.roll,
+            self.pose.orientation.pitch,
+        ])
+
+        self.ser.write(b"SETPVC P1 Z", self.pose.position.z)
+        self.ser.read_all()
+        self.ser.write(b"MOVE P1")
+        self.ser.read_all()
+
+    def move_robot_pitch(self, increment):
+
+        self.pose.update_pose([
+            self.pose.position.x,
+            self.pose.position.y,
+            self.pose.position.z,
+            self.pose.orientation.roll,
+            self.pose.orientation.pitch + increment,
+        ])
+
+        self.ser.write(b"SETPVC P1 P", self.pose.orientation.pitch)
+        self.ser.read_all()
+        self.ser.write(b"MOVE P1")
+        self.ser.read_all()
+
+    def move_robot_roll(self, increment):
+
+        self.pose.update_pose([
+            self.pose.position.x,
+            self.pose.position.y,
+            self.pose.position.z,
+            self.pose.orientation.roll + increment,
+            self.pose.orientation.pitch,
+        ])
+
+        self.ser.write(b"SETPVC P1 R", self.pose.orientation.roll)
+        self.ser.read_all()
+        self.ser.write(b"MOVE P1")
+        self.ser.read_all()
+
+    '''
+    
+    def move_robot(self, increment, coord):
+
+        self.pose.update_pose([
+            self.pose.position.x + increment,
+            self.pose.position.y,
+            self.pose.position.z,
+            self.pose.orientation.roll,
+            self.pose.orientation.pitch,
+        ])
+
+        self.ser.write(b"SETPVC P1 %s %f" % (coord, self.pose.position.x))
+
+        self.ser.write(b"MOVE P1")
+    '''
 
     def print_pose(self):
         print(self.pose)
