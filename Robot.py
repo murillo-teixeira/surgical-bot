@@ -50,9 +50,9 @@ class Robot:
             ])
             position_command = "SETPVC P1 X " + self.pose.position.x
             self.ser.write(bytes(position_command, encoding='utf-8'))
-            self.ser.read_all()
+            self.ser.read_all() # prints Done.
             self.ser.write(b"MOVE P1")
-            self.ser.read_all()
+            self.ser.read_all() # prints Done.
 
     def move_robot_y(self, increment):
 
