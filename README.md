@@ -47,9 +47,7 @@
 # Final code sketch
 ```python
 robot1 = Robot(PORT1)
-
 robot2 = Robot(PORT2)
-
 joystick = Joystick(PORT3)
 
 # 1 second timer
