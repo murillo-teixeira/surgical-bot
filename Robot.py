@@ -8,13 +8,13 @@ class Robot:
     def __init__(self, port):
         self.ser = serial.Serial(port)
         self.ser.write(b"CON \r")
-        time.sleep(1)
-        self.ser.write(b"HOME \r")
-        time.sleep(180)
+        time.sleep(5)
+        # self.ser.write(b"HOME \r")
+        # time.sleep(160)
         response = self.ser.read_all()
         print(response.decode('ascii'))
 
-        self.pose = Pose()
+        self.pose = Pose()  
 
         self.get_intial_position()
 
@@ -24,7 +24,9 @@ class Robot:
         self.ser.write(b"LISTPV P1 \r")
         time.sleep(1)
         response = self.ser.read_all()
+        print(response)
         pattern = "X:([\s-]\d+)\s*Y:([\s-]\d+)\s*Z:([\s-]\d+)\s*P:([\s-]\d+)\s*R:([\s-]\d+)"
+        # X: 3423, Y: -353, Z: 3423, P: -201, R: 76
         match = re.search(pattern, response.decode('ascii'))
         self.pose.update_pose([
             int(match.group(1)),
@@ -45,14 +47,17 @@ class Robot:
                 self.pose.position.x + increment,
                 self.pose.position.y,
                 self.pose.position.z,
-                self.pose.orientation.roll,
                 self.pose.orientation.pitch,
+                self.pose.orientation.roll,
             ])
-            position_command = "SETPVC P1 X " + self.pose.position.x
+            position_command = f"SETPVC P1 X {self.pose.position.x} \r"
+            print(position_command)
             self.ser.write(bytes(position_command, encoding='utf-8'))
-            self.ser.read_all() # prints Done.
-            self.ser.write(b"MOVE P1")
-            self.ser.read_all() # prints Done.
+            time.sleep(1)
+            print(self.ser.read_all()) # prints Done.
+            self.ser.write(b"MOVE P1 \r")
+            time.sleep(1)
+            print(self.ser.read_all()) # prints Done.
 
     def move_robot_y(self, increment):
 
@@ -90,8 +95,8 @@ class Robot:
             self.pose.position.x,
             self.pose.position.y,
             self.pose.position.z,
-            self.pose.orientation.roll,
             self.pose.orientation.pitch + increment,
+            self.pose.orientation.roll,
         ])
 
         self.ser.write(b"SETPVC P1 P", self.pose.orientation.pitch)

@@ -18,8 +18,8 @@ class Pose:
         self.position.x = pose_array[0]
         self.position.y = pose_array[1]
         self.position.z = pose_array[2]
-        self.orientation.roll = pose_array[3]
-        self.orientation.pitch = pose_array[4]
+        self.orientation.pitch = pose_array[3]
+        self.orientation.roll = pose_array[4]
 
     def __str__(self):
-        return f"X: {self.position.x}, Y: {self.position.y}, Z: {self.position.x}, P: {self.orientation.pitch}, R: {self.orientation.roll}"
+        return f"X: {self.position.x}, Y: {self.position.y}, Z: {self.position.z}, P: {self.orientation.pitch}, R: {self.orientation.roll}"
