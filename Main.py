@@ -25,7 +25,6 @@ window = pygame.display.set_mode((WINDOW_SIZE), pygame.RESIZABLE)
 
 
 running = True
-
 while running:
     # Event handler
     for event in pygame.event.get():
