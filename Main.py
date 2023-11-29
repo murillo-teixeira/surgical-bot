@@ -2,6 +2,7 @@ from Robot import Robot
 from Interface import Interface
 from Joystick import Controller
 import pygame
+import numpy as np
 
 # Initialize the pygame
 pygame.init()
@@ -56,25 +57,25 @@ while running:
                 # Change manipulator control
                 is_camera = not is_camera
         
-        if event.type == pygame.JOYAXISMOTION:
+        if (event.type == pygame.JOYAXISMOTION and abs(event.value) > 0.6):
             if event.axis == 0: # 0 and 1 are axis for left joystick
                 # change y value
                 if is_camera:
-                    robot_camera.move_robot_y(event.value*100)
+                    robot_camera.move_robot_y(np.sign(event.value)*100)
                 else:
-                    robot_scalpel.move_robot_y(event.value*100)
+                    robot_scalpel.move_robot_y(np.sign(event.value)*100)
             elif event.axis == 1:
                 if is_camera:
-                    robot_camera.move_robot_x(event.value*100)
+                    robot_camera.move_robot_x(np.sign(event.value)*100)
                 else:
-                    robot_scalpel.move_robot_x(event.value*100)
+                    robot_scalpel.move_robot_x(np.sign(event.value)*100)
             elif event.axis == 2:
                 if is_camera:
-                    robot_camera.move_robot_pitch(event.value*100)
+                    robot_camera.move_robot_pitch(np.sign(event.value)*100)
                 else:
-                    robot_scalpel.move_robot_pitch(event.value*100)
+                    robot_scalpel.move_robot_pitch(np.sign(event.value)*100)
             elif event.axis == 3 :
                 if is_camera:
-                    robot_camera.move_robot_roll(event.value*100)
+                    robot_camera.move_robot_roll(np.sign(event.value)*100)
                 else:
-                    robot_scalpel.move_robot_roll(event.value*100)
+                    robot_scalpel.move_robot_roll(np.sign(event.value)*100)

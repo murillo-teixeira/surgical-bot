@@ -40,7 +40,7 @@ class Controller:
                     # Change manipulator control
                     self.changeManipulator()
             
-            if event.type == pygame.JOYAXISMOTION:
+            if (event.type == pygame.JOYAXISMOTION and round(event.value, 3) > 0.6):
                 if event.axis == 0: # 0 and 1 are axis for left joystick
                     # change y value
                     self.changeX()
