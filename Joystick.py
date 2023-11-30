@@ -1,4 +1,5 @@
 import pygame
+import time
 
 class Controller:
     def __init__(self) -> None:
@@ -19,11 +20,10 @@ class Controller:
 
     def eventHandler(self):
         for event in pygame.event.get():
-            print(event)
+            # print(event)
             if event.type == pygame.QUIT:
                 return
             if event.type == pygame.JOYBUTTONDOWN:
-                print(event)
                 if event.button == 2:
                     # Open camera menu function
                     self.cameraMenu()
@@ -35,7 +35,9 @@ class Controller:
                     self.decreaseZ()
                 if event.button == 5:
                     # Increase value of z
-                    self.increaseZ()
+                    while(self.joystick.get_button(5)):
+                        self.increaseZ()
+                        time.sleep(1)
                 if event.button == 7:
                     # Change manipulator control
                     self.changeManipulator()
@@ -53,25 +55,25 @@ class Controller:
                     self.changePitch()
 
     def cameraMenu(self):
-        print("CameraMenu")
+        print("Camera Menu")
 
     def manipulatorMenu(self):
-        print("ManipulatorMnu")
+        print("Manipulator Menu")
 
     def increaseZ(self):
-        print("increaseZ")
+        print("increase Z")
 
     def decreaseZ(self):
-        print("decreaseZ")
+        print("decrease Z")
 
     def changeManipulator(self):
         print("change manipulator")
 
     def changeY(self):
-        print("changey")
+        print("change y")
 
     def changeX(self):
-        print("changex")
+        print("change x")
     
     def changeRoll(self):
         print("change Roll")
