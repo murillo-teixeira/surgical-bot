@@ -25,7 +25,7 @@ class Video:
 
         
         #Initialize the first camera
-        self.camera = pygame.camera.Camera(self.camera_list[0], self.size, "RGB")
+        self.camera = pygame.camera.Camera(self.camera_list[1], self.size, "RGB")
         self.camera.start()
         self.screen = pygame.surface.Surface(self.size, 0 , self.display)
 
