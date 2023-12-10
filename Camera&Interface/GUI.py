@@ -35,7 +35,7 @@ window = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Robotis GUI")
 
 # Load background image
-background_image = pygame.image.load("background.png")  # Replace "background.jpg" with your image file
+background_image = pygame.image.load(r"C:\Users\fatim\Desktop\IST\Robotics\scorbot\Camera&Interface\background.jpeg")  # Replace "background.jpg" with your image file
 background_image = pygame.transform.scale(background_image, (width, height))
 
 
