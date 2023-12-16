@@ -196,7 +196,7 @@ class Robot:
             else:
                 self.ser.write(b"CON \r")
                 
-        print(response)
+        if response != '': print(response)
 
     def print_pose(self):
         print(self.pose)
