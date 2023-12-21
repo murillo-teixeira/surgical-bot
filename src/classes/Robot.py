@@ -3,7 +3,7 @@ import serial
 import re
 
 class Robot:
-    def __init__(self, port):
+    def __init__(self, port, home=False):
         self.ROBOT_INITIAL_POSITION = [b"5440\r", b"-353\r", b"2616\r", b"-853\r", b"-200\r"]
         self.ROBOT_OPTION_1 = [b"0\r", b"-0\r", b"-154\r", b"-1\r", b"0\r"]
         self.ROBOT_OPTION_2 = [b"-595\r", b"57\r", b"-28450\r", b"24110\r", b"0\r"] # second one should be different
@@ -12,6 +12,10 @@ class Robot:
         
         self.ser = serial.Serial(port)
         
+        if home:
+            print("Homing robot")
+            self.home()
+
         self.ser.write(b"CON \r")
         time.sleep(1)
 
@@ -27,27 +31,38 @@ class Robot:
 
         self.check_messages(self.ser.read_all().decode('ascii'))
 
+        self.estimate_robot_position = self.ROBOT_INITIAL_POSITION.copy()
 
         self.commands = {
             'x': {
                 'increase': '1',
                 'decrease': 'Q',
+                'increase_value': 65.5,
+                'decrease_value': 65.5,
             },
             'y': {
                 'increase': '2',
                 'decrease': 'W',
+                'increase_value': 39.0,
+                'decrease_value': 39.0,
             },
             'z': {
                 'increase': '3',
                 'decrease': 'E',
+                'increase_value': 69.6,
+                'decrease_value': 69.6,
             },
             'p': {
                 'increase': '4',
                 'decrease': 'R',
+                'increase_value': 1,
+                'decrease_value': 1,
             },
             'r': {
                 'increase': '5',
                 'decrease': 'T',
+                'increase_value': 1,
+                'decrease_value': 1,
             },
         }
 
@@ -74,9 +89,19 @@ class Robot:
         elif self.speed_mode == 'slow':
             self.set_speed_mode('fast')
 
-    def home(self, port):
+    def home(self):
         self.ser.write(b"HOME \r")
         time.sleep(180)
+
+    def get_position_estimate(self):
+        return self.estimate_robot_position[0:3]
+
+    def update_current_estimate_position(self, axis, direction):
+        axis_index = list(self.commands.keys()).index(axis)
+        if direction == 'increase':
+            self.estimate_robot_position[axis_index] += self.commands[axis][increase_value]
+        elif direction == 'decrease':
+            self.estimate_robot_position[axis_index] += self.commands[axis][decrease_value]
 
     def set_movement_mode(self, movement_mode):
         if movement_mode == self.movement_mode:
@@ -143,6 +168,8 @@ class Robot:
         self.ser.write(bytes(f"{command_to_send} \r", encoding='utf-8'))
         self.check_messages(self.ser.read_all().decode('ascii'))
 
+        self.update_current_estimate_position(axis, direction)
+
     def move_automatic(self, position_command):
         self.set_mode('auto')
         self.ser.write(b"TEACH P0 \r") #put intermediate position?
@@ -167,7 +194,23 @@ class Robot:
         self.ser.write(b"MOVE P0\r")
         time.sleep(1)
 
-    
+    def get_current_position(self):
+        self.ser.write(b"HERE P1 \r")
+        time.sleep(0.1)
+        self.ser.write(b"LISTPV P1 \r")
+        time.sleep(0.5)
+        response = self.ser.read_all().decode('ascii')
+        self.check_messages(response)
+        pattern = "X:([\s-]\d+)\s*Y:([\s-]\d+)\s*Z:([\s-]\d+)\s*P:([\s-]\d+)\s*R:([\s-]\d+)"
+        match = re.search(pattern, response)
+        self.estimate_robot_position = [
+            int(match.group(1)),
+            int(match.group(2)),
+            int(match.group(3)),
+            int(match.group(4)),
+            int(match.group(5))
+        ]
+
     def move_one_by_one(self, position_command):
         self.set_mode('auto')
         

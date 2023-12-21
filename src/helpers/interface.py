@@ -3,8 +3,8 @@ import numpy as np
 
 
 width, height = 900, 600
-background_image = pygame.image.load("C:/Users/fatim/Desktop/IST/Robotics/scorbot/src/assets/background.jpeg")  # Replace "background.jpg" with your image file
-background_image = pygame.transform.scale(background_image, (width, height))
+# background_image = pygame.image.load("C:/Users/fatim/Desktop/IST/Robotics/scorbot/src/assets/background.jpeg")  # Replace "background.jpg" with your image file
+# background_image = pygame.transform.scale(background_image, (width, height))
 
 # Function to create a gradient-filled rectangle
 def draw_gradient_rect(surface, rect, color1, color2):
