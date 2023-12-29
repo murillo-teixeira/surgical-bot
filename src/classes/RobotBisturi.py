@@ -4,12 +4,9 @@ import re
 
 class Robot:
     def __init__(self, port, home=False):
+        # Update to joints
         self.ROBOT_INITIAL_POSITION = [b"5440\r", b"-353\r", b"2616\r", b"-853\r", b"-200\r"]
-        self.ROBOT_OPTION_1 = [b"0\r", b"-0\r", b"-154\r", b"-1\r", b"0\r"]
-        self.ROBOT_OPTION_2 = [b"-595\r", b"57\r", b"-28450\r", b"24110\r", b"0\r"] # second one should be different
-        self.ROBOT_OPTION_3 = [b"-595\r", b"57\r", b"-28450\r", b"24110\r", b"0\r"] # second one should be different
-        self.ROBOT_OPTION_4 = [b"7534\r", b"-353\r", b"6523\r", b"78\r", b"-200\r"] # The same as 1 for now
-        
+
         self.ser = serial.Serial(port)
         
         if home:
@@ -21,6 +18,12 @@ class Robot:
 
         self.mode = None
         self.movement_mode = None
+
+        self.move_automatic_joints(self.ROBOT_INITIAL_POSITION)
+        self.estimate_robot_position = self.ROBOT_INITIAL_POSITION.copy()
+        
+        time.sleep(0.1)
+
         self.set_mode('manual')
         self.set_movement_mode('J')
                 
@@ -30,8 +33,6 @@ class Robot:
         self.set_speed_mode('slow')
 
         self.check_messages(self.ser.read_all().decode('ascii'))
-
-        self.estimate_robot_position = self.ROBOT_INITIAL_POSITION.copy()
 
         self.commands = {
             'x': {
@@ -68,6 +69,10 @@ class Robot:
 
     def close(self):
         self.ser.close()
+
+    def enable_conection(self):
+        self.ser.write(b"CON \r")
+        time.sleep(0.1)
 
     def set_speed_mode(self, speed_mode):
         if speed_mode == self.speed_mode:
@@ -169,19 +174,7 @@ class Robot:
         self.check_messages(self.ser.read_all().decode('ascii'))
 
         self.update_current_estimate_position(axis, direction)
-
-    def move_automatic(self, position_command):
-        self.set_mode('auto')
-        self.ser.write(b"TEACH P0 \r") #put intermediate position?
-        time.sleep(0.1)
-        for command in position_command:
-            self.check_messages(self.ser.read_all().decode('ascii'))
-            self.ser.write(command)
-            time.sleep(0.1)
-        
-        self.ser.write(b"MOVE P0\r")
-        time.sleep(1)
-        
+      
     def move_automatic_joints(self, position_command):
         self.set_mode('auto')
         self.ser.write(b"SETPV P0 \r") #put intermediate position?
@@ -210,25 +203,7 @@ class Robot:
             int(match.group(4)),
             int(match.group(5))
         ]
-
-    def move_one_by_one(self, position_command):
-        self.set_mode('auto')
-        
-        self.ser.write(b"HERE P1 \r")
-        time.sleep(0.1)
-        self.ser.write(b"SETPV P1 1 -7000\r")
-        time.sleep(0.5)
-        self.ser.write(b"MOVE P1 \r")
-        time.sleep(0.5)
-        
-        temp_position_command = position_command.copy()
-        temp_position_command[0] = b'-7000\r'
-        self.move_automatic_joints(temp_position_command)
-        time.sleep(4)
-        self.move_automatic_joints(position_command)
-        
- 
-        
+       
     def check_messages(self, response):
         print(response)
         # response = self.ser.read_all().decode('ascii')

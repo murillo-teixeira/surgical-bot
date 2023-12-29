@@ -73,21 +73,23 @@ def main(home = False):
                     if event.button == 0:
                         print("Show camera menu")
                         menu_button_state = True
+                    if event.button == 9:
+                        robot_bisturi.enable_conection()
+                        robot_camera.enable_conection()
                 if event.type == pygame.JOYHATMOTION:
                     if menu_button_state:
-                        print(event.value)
+                        menu_button_state = False
                         if event.value == (0, 1):
                             print("option 1")
                             robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_1)
-                        if event.value == (1, 0):
+                        elif event.value == (1, 0):
                             print("option 2")
                             robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_2)
-                        if event.value == (0, -1):
+                        elif event.value == (0, -1):
                             print("option 3")
                             robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_3)
-                        # if event.value == (0, 1):
-                        #     print("option 1")
-                        menu_button_state = False
+                        else:
+                            menu_button_state = True
 
             window.blit(background_image, (0, 0))
 

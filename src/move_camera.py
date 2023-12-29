@@ -37,6 +37,9 @@ while running:
                 if event.button == 0:
                     print("Show camera menu")
                     menu_button_state = True
+                if event.button == 9:
+                    robot_bisturi.enable_conection()
+                    robot_camera.enable_conection()
             if event.type == pygame.JOYHATMOTION:
                 if menu_button_state:
                     menu_button_state = False
