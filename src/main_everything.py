@@ -17,7 +17,7 @@ def main(home = False):
     pygame.joystick.init()
 
     robot_bisturi = RobotBisturi("COM14", home=home, debug=debug)
-    # robot_camera = RobotCamera("COM7", home=home)
+    robot_camera = RobotCamera("COM17", home=home, debug=debug)
 
     controller = Controller(0)
 
@@ -29,7 +29,7 @@ def main(home = False):
 
     #GUI part
     # set max values for x, y, z
-    x_max = 6136
+    x_max = 5400
     y_max = 1687
     z_max = 1922
     x_min = 4009
@@ -80,23 +80,23 @@ def main(home = False):
                         menu_button_state = True
                     if event.button == 9:
                         robot_bisturi.enable_conection()
-                        # robot_camera.enable_conection()
+                        robot_camera.enable_conection()
                     if event.button == 2:
                         robot_bisturi.move_to_home()
-                # if event.type == pygame.JOYHATMOTION:
-                #     if menu_button_state:
-                #         menu_button_state = False
-                #         if event.value == (0, 1):
-                #             print("option 1")
-                #             robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_1)
-                #         elif event.value == (1, 0):
-                #             print("option 2")
-                #             robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_2)
-                #         elif event.value == (0, -1):
-                #             print("option 3")
-                #             robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_3)
-                #         else:
-                #             menu_button_state = True
+                if event.type == pygame.JOYHATMOTION:
+                    if menu_button_state:
+                        menu_button_state = False
+                        if event.value == (0, 1):
+                            print("option 1")
+                            robot_camera.move_one_by_one(1)
+                        elif event.value == (1, 0):
+                            print("option 2")
+                            robot_camera.move_one_by_one(2)
+                        elif event.value == (0, -1):
+                            print("option 3")
+                            robot_camera.move_one_by_one(3)
+                        else:
+                            menu_button_state = True
 
             window.blit(background_image, (0, 0))
 
@@ -124,19 +124,19 @@ def main(home = False):
                     print("Z is too low, please move it up")
                 if z > z_max - tolerance - 400:
                     print("Z is too high, please move it down")
-                if y < y_min + tolerance + 400:
+                if y < y_min + tolerance + 100:
                     print("Y is too low, please move it up")
-                if y > y_max - tolerance - 400:
+                if y > y_max - tolerance - 100:
                     print("Y is too high, please move it down")
-                if x < x_min + tolerance + 400:
+                if x < x_min + tolerance + 100:
                     print("X is too low, please move it right")
-                if x > x_max - tolerance - 400:
+                if x > x_max - tolerance - 100:
                     print("X is too high, please move it left")
                 
             x, y, z = robot_bisturi.get_position_estimate()
 
             if not menu_button_state:
-                movement_in_progress = process_input(axes, buttons, robot_bisturi, 'robot_camera', x, y, z, x_max, y_max, z_max, x_min, y_min, z_min, tolerance)
+                movement_in_progress = process_input(axes, buttons, robot_bisturi, robot_camera, x, y, z, x_max, y_max, z_max, x_min, y_min, z_min, tolerance)
             
 
             all_buttons_pressed.append([time.time(), axes, buttons, hat, menu_button_state])

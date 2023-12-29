@@ -3,8 +3,8 @@ import serial
 import re
 
 class RobotCamera:
-    def __init__(self, port, home=False):
-        
+    def __init__(self, port, home=False, debug=False):
+        self.debug = debug
         self.camera_position_options = {
             1: [b"2000\r", b"-12249\r", b"-8210\r", b"-25802\r", b"0\r"],
             2: [b"2000\r", b"-13687\r", b"-27171\r", b"-3323\r", b"0\r"],
@@ -14,7 +14,7 @@ class RobotCamera:
         self.ser = serial.Serial(port)
         
         if home:
-            print("Homing robot")
+            if self.debug: print("Homing robot")
             self.home()
         
         self.ser.write(b"CON \r")
@@ -56,7 +56,7 @@ class RobotCamera:
 
     def set_mode(self, mode):
         if mode == self.mode:
-            print("Mode already set to", mode)
+            if self.debug: print("Mode already set to", mode)
             return
         
         self.mode = mode
@@ -74,7 +74,7 @@ class RobotCamera:
         start_time = time.time()
         while True:
             check += self.ser.read_all().decode('ascii')
-            print(check)
+            if self.debug: print(check)
 
             if bool(re.search(undesired_command, check)):
                 self.ser.write(b"~\r")
@@ -86,9 +86,19 @@ class RobotCamera:
                 raise TimeoutError
 
             time.sleep(0.05)
+        
+        if self.mode == 'manual':
+            time.sleep(0.1)
+            self.ser.write(b"J\r")
+            time.sleep(0.1)
+            self.ser.write(b"J\r")
+            time.sleep(0.1)
 
     def move_manual(self, axis: str, direction: str):
         self.set_mode('manual')
+        self.ser.write(b"J\r")
+        time.sleep(0.1)
+        
         if direction not in ['increase', 'decrease']:
             raise ValueError("Direction must be 'increase' or 'decrease'")
 
@@ -101,16 +111,16 @@ class RobotCamera:
   
     def move_one_by_one(self, option):
         if option == self.current_option:
-            print("Option already selected")
+            if self.debug: print("Option already selected")
             return
         
         self.current_option = option
         position_command = self.camera_position_options[option]
         
-        print("Changing to auto mode")
+        if self.debug: print("Changing to auto mode")
         self.set_mode('auto')
         
-        print("First movement")
+        if self.debug: print("First movement")
         self.ser.write(b"HERE P1 \r")
         time.sleep(0.1)
         self.ser.write(b"SETPV P1 1 -7000\r")
@@ -120,7 +130,7 @@ class RobotCamera:
 
         self.check_messages(self.ser.read_all().decode('ascii'))
 
-        print("Second movement")
+        if self.debug: print("Second movement")
         temp_position_command = position_command.copy()
         temp_position_command[0] = b'-7000\r'
         
@@ -128,7 +138,7 @@ class RobotCamera:
         time.sleep(0.1)
 
         for command in temp_position_command:
-            print(command)
+            if self.debug: print(command)
             self.ser.write(command)
             response = self.ser.read_all().decode('ascii')
             self.check_messages(response)
@@ -137,11 +147,11 @@ class RobotCamera:
         self.ser.write(b"MOVE P1\r")
         time.sleep(2)
 
-        print("Third movement")
+        if self.debug: print("Third movement")
         self.ser.write(b"SETPV P1\r")
         time.sleep(0.1)
         for command in position_command:
-            print(command)
+            if self.debug: print(command)
             self.ser.write(command)
             response = self.ser.read_all().decode('ascii')
             self.check_messages(response)
@@ -150,17 +160,17 @@ class RobotCamera:
         time.sleep(0.5)
         
     def check_messages(self, response):
-        print(response)
+        if self.debug: print(response)
         # response = self.ser.read_all().decode('ascii')
         if bool(re.search("DISABLED", response)) or bool(re.search("IMPACT", response)):
-            print("ASKJHDS")
+            if self.debug: print("ASKJHDS")
             if self.mode == 'manual':
                 self.ser.write(b"C \r")
             else:
                 self.ser.write(b"CON \r")
             return True
 
-        if response != '': print(response)
+        if response != '' and self.debug: print(response)
 
         return False
 
