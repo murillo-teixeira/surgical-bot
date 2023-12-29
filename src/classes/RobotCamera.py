@@ -2,7 +2,7 @@ import time
 import serial
 import re
 
-class Robot:
+class RobotCamera:
     def __init__(self, port, home=False):
         self.ROBOT_INITIAL_POSITION = [b"5440\r", b"-353\r", b"2616\r", b"-853\r", b"-200\r"]
         self.ROBOT_OPTION_1 = [b"0\r", b"-0\r", b"-154\r", b"-1\r", b"0\r"]
@@ -128,26 +128,6 @@ class Robot:
         elif mode == "auto":
             desired_command = "EXIT"
             undesired_command = "MANUAL MODE!"
-
-        check = ''
-        start_time = time.time()
-        while True:
-            check += self.ser.read_all().decode('ascii')
-            if self.check_messages(check):
-                check = ''
-
-            if bool(re.search(undesired_command, check)):
-                self.ser.write(b"~\r")
-                self.mode = mode
-                return
-            if bool(re.search(desired_command, check)):
-                self.mode = mode
-                return
-
-            if time.time() - start_time > 10: 
-                raise TimeoutError
-
-            time.sleep(0.05)
 
         # if bool(re.search("DISABLED", check)) or bool(re.search("IMPACT", response)):
         #     if self.mode == 'manual':

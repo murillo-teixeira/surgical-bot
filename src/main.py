@@ -3,6 +3,7 @@ import pygame
 import time
 import numpy as np
 from classes.Robot import Robot
+from classes.RobotCamera import RobotCamera
 from classes.Joystick import Controller
 from classes.Pose import Pose
 import cv2
@@ -13,8 +14,10 @@ def main(home = False):
     pygame.init()
     pygame.joystick.init()
 
-    robot_bisturi = Robot("COM11", home=home)
-    robot_camera = Robot("COM9", home=home)
+    robot_bisturi = Robot("COM8", home=home)
+    robot_camera = RobotCamera("COM7", home=home)
+
+    robot_bisturi.move_automatic(robot_bisturi.ROBOT_INITIAL_POSITION)
 
     controller = Controller(0)
 
@@ -32,11 +35,11 @@ def main(home = False):
 
     # Set up the Pygame window
     width, height = 900, 600
-    window = pygame.display.set_mode((width, height), pygame.FULLSCREEN)
+    window = pygame.display.set_mode((width, height), pygame.RESIZABLE)
     pygame.display.set_caption("Robotic surgeon")
 
     # Load background image
-    background_image = pygame.image.load("C:/Users/Murillo/repositories/scorbot/src/assets/background.jpeg")
+    background_image = pygame.image.load("C:/Users/fatim/Desktop/IST/Robotics/scorbot/src/assets/background.jpeg")
     background_image = pygame.transform.scale(background_image, (width, height))
 
     # Set up the camera
@@ -61,12 +64,12 @@ def main(home = False):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                    # robot_bisturi.close()
+                    robot_bisturi.close()
                     pygame.quit()
                 if event.type == pygame.JOYBUTTONDOWN:
                     if event.button == 8:
                         print("speed change")
-                        # robot_bisturi.change_speed()
+                        robot_bisturi.change_speed()
                     if event.button == 0:
                         print("Show camera menu")
                         menu_button_state = True
@@ -75,13 +78,13 @@ def main(home = False):
                         print(event.value)
                         if event.value == (0, 1):
                             print("option 1")
-                            robot_bisturi.move_one_by_one(robot_bisturi.ROBOT_OPTION_1)
+                            robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_1)
                         if event.value == (1, 0):
                             print("option 2")
-                            robot_bisturi.move_one_by_one(robot_bisturi.ROBOT_OPTION_1)
+                            robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_2)
                         if event.value == (0, -1):
                             print("option 3")
-                            robot_bisturi.move_one_by_one(robot_bisturi.ROBOT_OPTION_3)
+                            robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_3)
                         # if event.value == (0, 1):
                         #     print("option 1")
                         menu_button_state = False
@@ -101,7 +104,7 @@ def main(home = False):
             window.blit(frame, (35, 75))
 
             if not menu_button_state:
-                process_input(axes, buttons, robot_bisturi, robot_camera)
+                process_input(axes, buttons, robot_bisturi, 'robot_camera')
             
             if time.time() - time_since_previous_listpv > time_between_listpv:
                 time_since_previous_listpv = time.time()
@@ -112,14 +115,14 @@ def main(home = False):
             all_buttons_pressed.append([time.time(), axes, buttons, hat, menu_button_state])
             
             # arrow head points -> upper point (665, 70) ,  lower point (840, 250)
-            x_point = int(x * 175 / x_max + 665)
-            y_point = int(250 - y * 180 / y_max)
+            x_point = int(int(x) * 175 / x_max + 665)
+            y_point = int(250 - int(y) * 180 / y_max)
             pygame.draw.circle(window, (177, 80, 251), (x_point, y_point), 3)  # circle
 
             # z
             # bar points -> upper point (760,285), lower point (760, 485)
-            z_point = int(485 - z * 200 / z_max)
-            bar_length = int(z * 200 / z_max)
+            z_point = int(485 - int(z) * 200 / z_max)
+            bar_length = int(int(z) * 200 / z_max)
             left_graph_rect = pygame.Rect(760 - 10, z_point, 20, bar_length)
 
             gradient_color1 = (104, 239, 243, 255)  # Top color
