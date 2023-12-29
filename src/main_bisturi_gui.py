@@ -2,7 +2,7 @@ import sys
 import pygame
 import time
 import numpy as np
-from classes.Robot import Robot
+from classes.RobotBisturi import RobotBisturi
 from classes.RobotCamera import RobotCamera
 from classes.Joystick import Controller
 from classes.Pose import Pose
@@ -10,14 +10,14 @@ import cv2
 from helpers.process_input import process_input
 from helpers.interface import *
 
+debug = False
+
 def main(home = False):
     pygame.init()
     pygame.joystick.init()
 
-    robot_bisturi = Robot("COM8", home=home)
-    robot_camera = RobotCamera("COM7", home=home)
-
-    robot_bisturi.move_automatic(robot_bisturi.ROBOT_INITIAL_POSITION)
+    robot_bisturi = RobotBisturi("COM14", home=home, debug=debug)
+    # robot_camera = RobotCamera("COM7", home=home)
 
     controller = Controller(0)
 
@@ -29,9 +29,12 @@ def main(home = False):
 
     #GUI part
     # set max values for x, y, z
-    x_max = 7
-    y_max = 7
-    z_max = 5
+    x_max = 6136
+    y_max = 1687
+    z_max = 3764
+    x_min = 4009
+    y_min = -1580
+    z_min = -400
 
     # Set up the Pygame window
     width, height = 900, 600
@@ -43,11 +46,10 @@ def main(home = False):
     background_image = pygame.transform.scale(background_image, (width, height))
 
     # Set up the camera
-    camera = cv2.VideoCapture(1)  # Change the argument to the camera index if using an external camera
+    camera = cv2.VideoCapture(2)  # Change the argument to the camera index if using an external camera
 
     # Set up the clock for controlling the frame rate
     clock = pygame.time.Clock()
-
 
     # put here the function that gets the values of x y and z
     x = 0
@@ -55,6 +57,8 @@ def main(home = False):
     z = 0
 
     time_since_previous_listpv = time.time()
+    time_since_previous_print = time.time()
+    movement_in_progress = False
     time_between_listpv = 10
 
     while running:
@@ -75,21 +79,23 @@ def main(home = False):
                         menu_button_state = True
                     if event.button == 9:
                         robot_bisturi.enable_conection()
-                        robot_camera.enable_conection()
-                if event.type == pygame.JOYHATMOTION:
-                    if menu_button_state:
-                        menu_button_state = False
-                        if event.value == (0, 1):
-                            print("option 1")
-                            robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_1)
-                        elif event.value == (1, 0):
-                            print("option 2")
-                            robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_2)
-                        elif event.value == (0, -1):
-                            print("option 3")
-                            robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_3)
-                        else:
-                            menu_button_state = True
+                        # robot_camera.enable_conection()
+                    if event.button == 2:
+                        robot_bisturi.move_to_home()
+                # if event.type == pygame.JOYHATMOTION:
+                #     if menu_button_state:
+                #         menu_button_state = False
+                #         if event.value == (0, 1):
+                #             print("option 1")
+                #             robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_1)
+                #         elif event.value == (1, 0):
+                #             print("option 2")
+                #             robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_2)
+                #         elif event.value == (0, -1):
+                #             print("option 3")
+                #             robot_camera.move_one_by_one(robot_camera.ROBOT_OPTION_3)
+                #         else:
+                #             menu_button_state = True
 
             window.blit(background_image, (0, 0))
 
@@ -106,25 +112,30 @@ def main(home = False):
             window.blit(frame, (35, 75))
 
             if not menu_button_state:
-                process_input(axes, buttons, robot_bisturi, 'robot_camera')
+                movement_in_progress = process_input(axes, buttons, robot_bisturi, 'robot_camera')
             
-            if time.time() - time_since_previous_listpv > time_between_listpv:
+            if time.time() - time_since_previous_listpv > time_between_listpv and not movement_in_progress:
                 time_since_previous_listpv = time.time()
                 robot_bisturi.get_current_position()
+                print(" position!")
             
+            if time.time() - time_since_previous_print > 2:
+                time_since_previous_print = time.time()
+                print(x, y, z)
+                
             x, y, z = robot_bisturi.get_position_estimate()
 
             all_buttons_pressed.append([time.time(), axes, buttons, hat, menu_button_state])
             
             # arrow head points -> upper point (665, 70) ,  lower point (840, 250)
-            x_point = int(int(x) * 175 / x_max + 665)
-            y_point = int(250 - int(y) * 180 / y_max)
+            x_point = int((int(x) - x_min) * 175 / (x_max - x_min) + 665)
+            y_point = int(250 - (int(y) - y_min) * 180 / (y_max - y_min))
             pygame.draw.circle(window, (177, 80, 251), (x_point, y_point), 3)  # circle
 
             # z
             # bar points -> upper point (760,285), lower point (760, 485)
-            z_point = int(485 - int(z) * 200 / z_max)
-            bar_length = int(int(z) * 200 / z_max)
+            z_point = int(485 - (int(z) - z_min) * 200 / (z_max - z_min))
+            bar_length = int((int(z) - z_min) * 200 / (z_max - z_min))
             left_graph_rect = pygame.Rect(760 - 10, z_point, 20, bar_length)
 
             gradient_color1 = (104, 239, 243, 255)  # Top color
@@ -141,7 +152,6 @@ def main(home = False):
 
         except Exception as e:
             print("Error", e)
-
 
     camera.release()
     pygame.quit()

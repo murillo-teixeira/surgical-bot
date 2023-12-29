@@ -50,6 +50,10 @@ class RobotCamera:
         self.ser.write(b"HOME \r")
         time.sleep(180)
 
+    def enable_conection(self):
+        self.ser.write(b"CON \r")
+        time.sleep(0.1)
+
     def set_mode(self, mode):
         if mode == self.mode:
             print("Mode already set to", mode)

@@ -2,15 +2,16 @@ import time
 import serial
 import re
 
-class Robot:
-    def __init__(self, port, home=False):
+class RobotBisturi:
+    def __init__(self, port, home=False, debug=False):
+        self.debug = debug
         # Update to joints
-        self.ROBOT_INITIAL_POSITION = [b"5440\r", b"-353\r", b"2616\r", b"-853\r", b"-200\r"]
+        self.ROBOT_INITIAL_POSITION = [b"0\r", b"8206\r", b"-1756\r", b"-18935\r", b"0\r"]
+        self.ROBOT_INITIAL_POSITION_XYZ = [5593, -353, 591, -903, -201]
 
         self.ser = serial.Serial(port)
-        
         if home:
-            print("Homing robot")
+            if self.debug: print("Homing robot")
             self.home()
 
         self.ser.write(b"CON \r")
@@ -19,10 +20,10 @@ class Robot:
         self.mode = None
         self.movement_mode = None
 
-        self.move_automatic_joints(self.ROBOT_INITIAL_POSITION)
-        self.estimate_robot_position = self.ROBOT_INITIAL_POSITION.copy()
+        self.move_to_home()
+        self.estimate_robot_position = self.ROBOT_INITIAL_POSITION_XYZ.copy()
         
-        time.sleep(0.1)
+        time.sleep(1)
 
         self.set_mode('manual')
         self.set_movement_mode('J')
@@ -38,20 +39,26 @@ class Robot:
             'x': {
                 'increase': '1',
                 'decrease': 'Q',
-                'increase_value': 65.5,
-                'decrease_value': 65.5,
+                'increase_value_fast': 17.5,
+                'decrease_value_fast': -17.5,
+                'increase_value_slow': 17.5/4,
+                'decrease_value_slow': -17.5/4,
             },
             'y': {
                 'increase': '2',
                 'decrease': 'W',
-                'increase_value': 39.0,
-                'decrease_value': 39.0,
+                'increase_value_fast': 17.5,
+                'decrease_value_fast': -17.5,
+                'increase_value_slow': 17.5/4,
+                'decrease_value_slow': -17.5/4,
             },
             'z': {
                 'increase': '3',
                 'decrease': 'E',
-                'increase_value': 69.6,
-                'decrease_value': 69.6,
+                'increase_value_fast': 17.3,
+                'decrease_value_fast': -17.3,
+                'increase_value_slow': 17.3/4,
+                'decrease_value_slow': -17.3/4,
             },
             'p': {
                 'increase': '4',
@@ -103,10 +110,14 @@ class Robot:
 
     def update_current_estimate_position(self, axis, direction):
         axis_index = list(self.commands.keys()).index(axis)
-        if direction == 'increase':
-            self.estimate_robot_position[axis_index] += self.commands[axis][increase_value]
-        elif direction == 'decrease':
-            self.estimate_robot_position[axis_index] += self.commands[axis][decrease_value]
+        if direction == 'increase' and self.speed_mode == 'fast':
+            self.estimate_robot_position[axis_index] += self.commands[axis]['increase_value_fast']
+        elif direction == 'decrease' and self.speed_mode == 'fast':
+            self.estimate_robot_position[axis_index] += self.commands[axis]['decrease_value_fast']
+        elif direction == 'increase' and self.speed_mode == 'slow':
+            self.estimate_robot_position[axis_index] += self.commands[axis]['increase_value_slow']
+        elif direction == 'decrease' and self.speed_mode == 'slow':
+            self.estimate_robot_position[axis_index] += self.commands[axis]['decrease_value_slow']
 
     def set_movement_mode(self, movement_mode):
         if movement_mode == self.movement_mode:
@@ -122,6 +133,8 @@ class Robot:
         if mode == self.mode:
             return
         
+        self.mode = mode
+        
         self.ser.write(b"~\r")
         
         if mode == "manual":
@@ -135,26 +148,18 @@ class Robot:
         start_time = time.time()
         while True:
             check += self.ser.read_all().decode('ascii')
-            self.check_messages(check)
+            if self.debug: print(check)
 
             if bool(re.search(undesired_command, check)):
                 self.ser.write(b"~\r")
-                self.mode = mode
                 return
             if bool(re.search(desired_command, check)):
-                self.mode = mode
                 return
 
             if time.time() - start_time > 10: 
                 raise TimeoutError
 
             time.sleep(0.05)
-
-        # if bool(re.search("DISABLED", check)) or bool(re.search("IMPACT", response)):
-        #     if self.mode == 'manual':
-        #         self.ser.write(b"C \r")
-        #     else:
-        #         self.ser.write(b"CON \r")
 
     def move_manual(self, axis: str, direction: str):
         self.set_mode('manual')
@@ -175,24 +180,29 @@ class Robot:
 
         self.update_current_estimate_position(axis, direction)
       
-    def move_automatic_joints(self, position_command):
+    def move_to_home(self):
         self.set_mode('auto')
+        time.sleep(1)
         self.ser.write(b"SETPV P0 \r") #put intermediate position?
-        time.sleep(0.1)
-        for command in position_command:
+        time.sleep(1)
+        for command in self.ROBOT_INITIAL_POSITION:
             self.check_messages(self.ser.read_all().decode('ascii'))
             self.ser.write(command)
             time.sleep(0.1)
         
         self.ser.write(b"MOVE P0\r")
+        self.estimate_robot_position = self.ROBOT_INITIAL_POSITION_XYZ.copy()
         time.sleep(1)
 
     def get_current_position(self):
+        self.set_mode('auto')
+        time.sleep(0.2)
         self.ser.write(b"HERE P1 \r")
         time.sleep(0.1)
         self.ser.write(b"LISTPV P1 \r")
         time.sleep(0.5)
         response = self.ser.read_all().decode('ascii')
+        if self.debug: print(response)
         self.check_messages(response)
         pattern = "X:([\s-]\d+)\s*Y:([\s-]\d+)\s*Z:([\s-]\d+)\s*P:([\s-]\d+)\s*R:([\s-]\d+)"
         match = re.search(pattern, response)
@@ -205,7 +215,7 @@ class Robot:
         ]
        
     def check_messages(self, response):
-        print(response)
+        if self.debug: print(response)
         # response = self.ser.read_all().decode('ascii')
         if bool(re.search("DISABLED", response)) or bool(re.search("IMPACT", response)):
             print("ASKJHDS")
@@ -214,7 +224,7 @@ class Robot:
             else:
                 self.ser.write(b"CON \r")
                 
-        if response != '': print(response)
+        if response != '' and self.debug: print(response)
 
     def print_pose(self):
         print(self.pose)
