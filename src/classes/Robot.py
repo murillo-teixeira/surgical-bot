@@ -21,9 +21,6 @@ class Robot:
 
         self.mode = None
         self.movement_mode = None
-
-
-
         self.set_mode('manual')
         self.set_movement_mode('J')
                 
@@ -102,9 +99,9 @@ class Robot:
     def update_current_estimate_position(self, axis, direction):
         axis_index = list(self.commands.keys()).index(axis)
         if direction == 'increase':
-            self.estimate_robot_position[axis_index] += self.commands[axis].increase_value
+            self.estimate_robot_position[axis_index] += self.commands[axis][increase_value]
         elif direction == 'decrease':
-            self.estimate_robot_position[axis_index] += self.commands[axis].decrease_value
+            self.estimate_robot_position[axis_index] += self.commands[axis][decrease_value]
 
     def set_movement_mode(self, movement_mode):
         if movement_mode == self.movement_mode:
@@ -133,8 +130,7 @@ class Robot:
         start_time = time.time()
         while True:
             check += self.ser.read_all().decode('ascii')
-            if self.check_messages(check):
-                check = ''
+            self.check_messages(check)
 
             if bool(re.search(undesired_command, check)):
                 self.ser.write(b"~\r")
@@ -199,7 +195,6 @@ class Robot:
         time.sleep(1)
 
     def get_current_position(self):
-        print("SOMETHING")
         self.ser.write(b"HERE P1 \r")
         time.sleep(0.1)
         self.ser.write(b"LISTPV P1 \r")
@@ -243,11 +238,8 @@ class Robot:
                 self.ser.write(b"C \r")
             else:
                 self.ser.write(b"CON \r")
-            return True
-
+                
         if response != '': print(response)
-
-        return False
 
     def print_pose(self):
         print(self.pose)

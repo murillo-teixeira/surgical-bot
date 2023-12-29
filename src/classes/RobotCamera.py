@@ -5,10 +5,10 @@ import re
 class RobotCamera:
     def __init__(self, port, home=False):
         self.ROBOT_INITIAL_POSITION = [b"5440\r", b"-353\r", b"2616\r", b"-853\r", b"-200\r"]
-        self.ROBOT_OPTION_1 = [b"0\r", b"-0\r", b"-154\r", b"-1\r", b"0\r"]
-        self.ROBOT_OPTION_2 = [b"-595\r", b"57\r", b"-28450\r", b"24110\r", b"0\r"] # second one should be different
-        self.ROBOT_OPTION_3 = [b"-595\r", b"57\r", b"-28450\r", b"24110\r", b"0\r"] # second one should be different
-        self.ROBOT_OPTION_4 = [b"7534\r", b"-353\r", b"6523\r", b"78\r", b"-200\r"] # The same as 1 for now
+        self.ROBOT_OPTION_1 = [b"2000\r", b"-12249\r", b"-8210\r", b"-25802\r", b"0\r"]
+        self.ROBOT_OPTION_2 = [b"2000\r", b"-13687\r", b"-27171\r", b"-3323\r", b"0\r"]
+        self.ROBOT_OPTION_3 = [b"2000\r", b"-1167\r", b"-26033\r", b"13945\r", b"0\r"]
+        self.ROBOT_OPTION_3 = [b"2000\r", b"-1167\r", b"-26033\r", b"13945\r", b"0\r"]
         
         self.ser = serial.Serial(port)
         
@@ -21,8 +21,6 @@ class RobotCamera:
 
         self.mode = None
         self.movement_mode = None
-
-
 
         self.set_mode('manual')
         self.set_movement_mode('J')
@@ -118,8 +116,11 @@ class RobotCamera:
 
     def set_mode(self, mode):
         if mode == self.mode:
+            print("Mode already set to", mode)
             return
         
+        self.mode = mode
+
         self.ser.write(b"~\r")
         
         if mode == "manual":
@@ -128,6 +129,23 @@ class RobotCamera:
         elif mode == "auto":
             desired_command = "EXIT"
             undesired_command = "MANUAL MODE!"
+
+        check = ''
+        start_time = time.time()
+        while True:
+            check += self.ser.read_all().decode('ascii')
+            print(check)
+
+            if bool(re.search(undesired_command, check)):
+                self.ser.write(b"~\r")
+                return
+            if bool(re.search(desired_command, check)):
+                return
+
+            if time.time() - start_time > 10: 
+                raise TimeoutError
+
+            time.sleep(0.05)
 
         # if bool(re.search("DISABLED", check)) or bool(re.search("IMPACT", response)):
         #     if self.mode == 'manual':
@@ -156,26 +174,27 @@ class RobotCamera:
 
     def move_automatic(self, position_command):
         self.set_mode('auto')
-        self.ser.write(b"TEACH P0 \r") #put intermediate position?
+        self.ser.write(b"TEACH P1 \r") #put intermediate position?
         time.sleep(0.1)
         for command in position_command:
             self.check_messages(self.ser.read_all().decode('ascii'))
             self.ser.write(command)
             time.sleep(0.1)
         
-        self.ser.write(b"MOVE P0\r")
+        self.ser.write(b"MOVE P1\r")
         time.sleep(1)
         
     def move_automatic_joints(self, position_command):
         self.set_mode('auto')
-        self.ser.write(b"SETPV P0 \r") #put intermediate position?
-        time.sleep(0.1)
+        self.ser.write(b"SETPV P1 \r") #put intermediate position?
+        time.sleep(0.5)
         for command in position_command:
-            self.check_messages(self.ser.read_all().decode('ascii'))
+            response = self.ser.read_all().decode('ascii')
+            self.check_messages(response)
             self.ser.write(command)
-            time.sleep(0.1)
+            time.sleep(1)
         
-        self.ser.write(b"MOVE P0\r")
+        self.ser.write(b"MOVE P1\r")
         time.sleep(1)
 
     def get_current_position(self):
@@ -197,22 +216,47 @@ class RobotCamera:
         ]
 
     def move_one_by_one(self, position_command):
+        print("Changing to auto mode")
         self.set_mode('auto')
         
+        print("First movement")
         self.ser.write(b"HERE P1 \r")
         time.sleep(0.1)
         self.ser.write(b"SETPV P1 1 -7000\r")
         time.sleep(0.5)
         self.ser.write(b"MOVE P1 \r")
         time.sleep(0.5)
-        
+
+        self.check_messages(self.ser.read_all().decode('ascii'))
+
+        print("Second movement")
         temp_position_command = position_command.copy()
         temp_position_command[0] = b'-7000\r'
-        self.move_automatic_joints(temp_position_command)
-        time.sleep(4)
-        self.move_automatic_joints(position_command)
         
- 
+        self.ser.write(b"SETPV P1\r")
+        time.sleep(0.1)
+
+        for command in temp_position_command:
+            print(command)
+            self.ser.write(command)
+            response = self.ser.read_all().decode('ascii')
+            self.check_messages(response)
+            time.sleep(0.1)
+
+        self.ser.write(b"MOVE P1\r")
+        time.sleep(2)
+
+        print("Third movement")
+        self.ser.write(b"SETPV P1\r")
+        time.sleep(0.1)
+        for command in position_command:
+            print(command)
+            self.ser.write(command)
+            response = self.ser.read_all().decode('ascii')
+            self.check_messages(response)
+            time.sleep(0.1)
+        self.ser.write(b"MOVE P1 \r")
+        time.sleep(0.5)
         
     def check_messages(self, response):
         print(response)
