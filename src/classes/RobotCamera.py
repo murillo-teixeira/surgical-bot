@@ -163,7 +163,6 @@ class RobotCamera:
         if self.debug: print(response)
         # response = self.ser.read_all().decode('ascii')
         if bool(re.search("DISABLED", response)) or bool(re.search("IMPACT", response)):
-            if self.debug: print("ASKJHDS")
             if self.mode == 'manual':
                 self.ser.write(b"C \r")
             else:

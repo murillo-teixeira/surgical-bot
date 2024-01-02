@@ -218,7 +218,6 @@ class RobotBisturi:
         if self.debug: print(response)
         # response = self.ser.read_all().decode('ascii')
         if bool(re.search("DISABLED", response)) or bool(re.search("IMPACT", response)):
-            print("ASKJHDS")
             if self.mode == 'manual':
                 self.ser.write(b"C \r")
             else:
